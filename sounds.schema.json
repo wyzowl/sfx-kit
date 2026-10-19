@@ -1,0 +1,149 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/wyzowl/sfx-kit/blob/main/sounds.schema.json",
+  "title": "SFX Kit sounds",
+  "description": "The SFX Kit catalogue: the kit's rules for using its sounds, its categories, and a record for every sound with what it is, when to use it, how to place it in time and how loud it is.",
+  "type": "object",
+  "required": ["name", "version", "license", "format", "how_to_use", "loudness", "categories", "sounds"],
+  "properties": {
+    "$schema": { "type": "string" },
+    "name": { "type": "string" },
+    "version": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$" },
+    "description": { "type": "string" },
+    "homepage": { "type": "string" },
+    "license": { "const": "CC0-1.0", "description": "CC0 1.0 Universal: no rights reserved." },
+    "credit": { "type": "string", "description": "Credit isn't required; this is how to give it if you'd like to." },
+    "format": {
+      "type": "object",
+      "description": "Every file's format.",
+      "required": ["container", "encoding", "sample_rate", "bit_depth"],
+      "properties": {
+        "container": { "const": "wav" },
+        "encoding": { "const": "pcm_s24le" },
+        "sample_rate": { "const": 48000 },
+        "bit_depth": { "const": 24 }
+      }
+    },
+    "how_to_use": {
+      "type": "object",
+      "description": "How to read and use the data, in brief: find, place, fit, levels and tuning. GUIDE.md has it in full.",
+      "additionalProperties": { "type": "string" }
+    },
+    "loudness": {
+      "type": "object",
+      "description": "How the kit's levels are measured and set.",
+      "required": ["measure", "tiers", "true_peak_ceiling_dbtp"],
+      "properties": {
+        "measure": { "type": "string" },
+        "tiers": { "type": "string" },
+        "true_peak_ceiling_dbtp": { "type": "number" }
+      }
+    },
+    "categories": { "type": "array", "items": { "$ref": "#/$defs/category" } },
+    "sounds": { "type": "array", "items": { "$ref": "#/$defs/sound" } }
+  },
+  "$defs": {
+    "category": {
+      "type": "object",
+      "required": ["id", "title", "description", "folder", "count", "dimensions"],
+      "properties": {
+        "id": { "type": "string", "description": "The category's id, as each sound's category field gives it." },
+        "title": { "type": "string" },
+        "description": { "type": "string", "description": "What the category is for." },
+        "folder": { "type": "string", "description": "Where its files are." },
+        "count": { "type": "integer" },
+        "dimensions": {
+          "type": "object",
+          "description": "What sets the category's sounds apart (speed, intensity, kind…) and each one's values, in order.",
+          "additionalProperties": { "type": "array", "items": { "type": "string" } }
+        },
+        "labels": { "type": "object", "description": "Display names for some dimension values.", "additionalProperties": { "type": "string" } }
+      }
+    },
+    "sound": {
+      "type": "object",
+      "required": ["id", "name", "category", "file", "variant", "description", "use_for", "avoid_for", "tags", "duration", "channels", "sync", "timing", "level", "under_voiceover_db", "adapt", "pairs_with", "character", "sha256"],
+      "properties": {
+        "id": { "type": "string", "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$", "description": "Stable identifier; also the file's name." },
+        "name": { "type": "string", "description": "A short name." },
+        "category": { "type": "string", "description": "The id of its category." },
+        "file": { "type": "string", "description": "Path to the WAV, from the kit's root." },
+        "variant": { "type": "object", "description": "Its place in its category's dimensions (for example speed: fast, intensity: soft).", "additionalProperties": { "type": "string" } },
+        "description": { "type": "string", "description": "What it sounds like." },
+        "use_for": { "type": "array", "items": { "type": "string" }, "description": "Moments it suits." },
+        "avoid_for": { "type": "array", "items": { "type": "string" }, "description": "Moments it doesn't." },
+        "tags": { "type": "array", "items": { "type": "string" }, "description": "Words to search by." },
+        "duration": { "type": "number", "description": "Length in seconds." },
+        "channels": { "enum": [1, 2], "description": "1 for mono; 2 for stereo (centred, with width, never panned)." },
+        "sync": {
+          "type": "object",
+          "description": "Where the sound meets the picture. Start the sound at (the moment it should meet) minus sync.at: the one rule for every sound.",
+          "required": ["at", "meets", "how"],
+          "properties": {
+            "at": { "type": "number", "description": "The sync point: seconds from the file's start to the part of the sound that should meet the moment. That's its loudest moment for most sounds, its very start for a gesture that runs with an action, its first event for a sequence, or the part that matters for a sound in parts (see parts)." },
+            "meets": {
+              "enum": ["instant", "action-start", "move-peak", "arrival", "release"],
+              "description": "The kind of moment the sync point meets: instant (the frame something happens), action-start (the frame an action begins; the sound runs with it), move-peak (a move's fastest point), arrival (what a build leads to: the reveal, the cut, the landing) or release (the frame something is let go, dropped or sent off)."
+            },
+            "how": { "type": "string", "description": "That moment, in words, for this sound." }
+          }
+        },
+        "parts": {
+          "type": "array",
+          "description": "For a sound in distinct parts: each part and when it comes, in order.",
+          "items": {
+            "type": "object",
+            "required": ["what", "at"],
+            "properties": { "what": { "type": "string" }, "at": { "type": "number", "description": "Seconds from the file's start." } }
+          }
+        },
+        "timing": {
+          "type": "object",
+          "description": "More of the sound's shape, in seconds from its start.",
+          "required": ["audible_start", "onset", "peak", "body_end", "audible_end"],
+          "properties": {
+            "audible_start": { "type": "number", "description": "Where it first comes within 40 dB of its peak." },
+            "onset": { "type": "number", "description": "Where it first comes within 20 dB of its peak." },
+            "peak": { "type": "number", "description": "Its loudest moment. Place by sync.at, not this: they differ for every sound that doesn't anchor on its loudest moment." },
+            "body_end": { "type": "number", "description": "Where it last falls 20 dB under its peak." },
+            "audible_end": { "type": "number", "description": "Where it last falls 40 dB under its peak." }
+          }
+        },
+        "span_seconds": { "type": "number", "description": "For a sound that runs with an action, builds up to an arrival or follows a release: the length of moment it fits at rate 1. To fit a moment exactly, set the rate to span_seconds divided by the moment's length." },
+        "fits_seconds": {
+          "type": "array",
+          "items": { "type": "number" },
+          "minItems": 2,
+          "maxItems": 2,
+          "description": "The shortest and longest moment it fits, within its rate range: the action a gesture runs with, the lead-up to a build's arrival, the fall or exit after a release, or the move a whoosh rides. Hits, pops and clicks don't have one."
+        },
+        "level": {
+          "type": "object",
+          "required": ["lufs", "true_peak_dbtp", "tier"],
+          "properties": {
+            "lufs": { "type": "number", "description": "Loudness over its loudest 150 ms, K-weighted, in LUFS." },
+            "true_peak_dbtp": { "type": "number", "description": "True peak, in dBTP (never above -3)." },
+            "tier": { "type": "string", "description": "Its loudness tier in its category." }
+          }
+        },
+        "under_voiceover_db": { "type": "number", "description": "How far it comes down (dB) wherever its body (timing.onset to timing.body_end) overlaps speech, for the voice to stay clear over it." },
+        "adapt": {
+          "type": "object",
+          "required": ["rate", "notes"],
+          "properties": {
+            "rate": { "type": "array", "items": { "type": "number" }, "minItems": 2, "maxItems": 2, "description": "How far it can be slowed or sped up (playback rate; its pitch and its times move with it: divide the times by the rate). [1, 1] means don't change it: it's tuned, or its pitch must stay true." },
+            "notes": { "type": "string", "description": "How to fit it to other lengths." }
+          }
+        },
+        "tuning": { "enum": ["C major pentatonic", "C major", "C"], "description": "For a tuned sound, the notes it uses: C major pentatonic (only C, D, E, G and A, which also sit with music in G or F major, or A, E or D minor), C major (a B or an F as well), or one note (C, for the 808-style basses)." },
+        "pairs_with": {
+          "type": "array",
+          "description": "Categories it layers well with, and how.",
+          "items": { "type": "object", "required": ["category", "how"], "properties": { "category": { "type": "string" }, "how": { "type": "string" } } }
+        },
+        "character": { "type": "string", "description": "A word or two on its tone." },
+        "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$", "description": "The file's SHA-256." }
+      }
+    }
+  }
+}
