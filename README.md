@@ -1,5 +1,7 @@
 # SFX Kit
 
+Also on Hugging Face: [huggingface.co/datasets/wyzowl/sfx-kit](https://huggingface.co/datasets/wyzowl/sfx-kit).
+
 320 original sound effects for videos, animations and interfaces, made to be as easy for AI tools to use as for
 people. Every sound comes with the data needed to choose it, place it in time and mix it: what it is, when to use it
 and when not to, its length, its sync point and its level.
